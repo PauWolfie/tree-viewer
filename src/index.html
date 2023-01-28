@@ -1,13 +1,299 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
-  <title>TreeView</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <title>Tree Example</title>
+
+  <style>
+    .node {
+      cursor: pointer;
+      background-color: black;
+    }
+
+    .node circle {
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 3px;
+    }
+
+    .node text {
+      font: 12px sans-serif;
+    }
+
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 2px;
+    }
+
+  </style>
+
 </head>
+
 <body>
-  <app-root></app-root>
+
+  <!-- load the d3.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+
+  <script>
+    var treeData = [{
+      "name": "Top Level",
+      "parent": "null",
+      "children": [{
+          "name": "Level 2: A",
+          "parent": "Top Level",
+          "children": [{
+              "name": "Son of A",
+              "parent": "Level 2: A"
+            },
+            {
+              "name": "Daughter of A",
+              "parent": "Level 2: A"
+            }
+          ]
+        },
+        {
+          "name": "Level 2: B",
+          "parent": "Top Level",
+          "children": []
+        }
+      ]
+    }];
+
+    /*
+    var treeData = buildTree("null", 4);
+
+    function buildTree(parent, i) {
+      var tree = [];
+      if (i != -1) {
+        if (parent == "null") {
+          newNode = {
+            "name": "child_" + i,
+            "parent": "null",
+            "children": buildTree("child_" + i, i-1)
+          }
+        } else {
+          newNode = {
+            "name": "child_" + i,
+            "parent": parent,
+            "children": buildTree("child_" + i, i-1)
+          }
+        }
+        tree.push(newNode);
+        return tree;
+      } else {
+        return [];
+      }
+    }
+    */
+
+
+    // ************** Generate the tree diagram	 *****************
+    var margin = {
+        top: 20,
+        right: 120,
+        bottom: 20,
+        left: 120
+      },
+      height = 960 - margin.right - margin.left,
+      width = 500 - margin.top - margin.bottom;
+
+    var i = 0,
+      duration = 750,
+      root;
+
+    var tree = d3.layout.tree()
+      .size([height, width]);
+
+    var diagonal = d3.svg.diagonal()
+      .projection(function (d) {
+        return [d.y, d.x];
+      });
+
+    var svg = d3.select("body").append("svg")
+      .attr("width", width + margin.right + margin.left)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    root = treeData[0];
+    root.x0 = height / 2;
+    root.y0 = 0;
+
+    update(root);
+
+    d3.select(self.frameElement).style("height", "500px");
+
+    function update(source) {
+
+      // Compute the new tree layout.
+      var nodes = tree.nodes(root).reverse(),
+        links = tree.links(nodes);
+
+      // Normalize for fixed-depth.
+      nodes.forEach(function (d) {
+        d.y = d.depth * 180;
+      });
+
+      // Update the nodes…
+      var node = svg.selectAll("g.node")
+        .data(nodes, function (d) {
+          return d.id || (d.id = ++i);
+        });
+
+      // Enter any new nodes at the parent's previous position.
+      var nodeEnter = node.enter().append("g")
+        .attr("id", function (d) {
+          return "g_" + d.name;
+        })
+        .attr("class", "node")
+        .attr("transform", function (d) {
+          return "translate(" + source.y0 + "," + source.x0 + ")";
+        }).on("click", click);
+
+      nodeEnter.append("svg:image")
+        .attr('x', 5)
+        .attr('y', -12)
+        .attr('width', 20)
+        .attr('height', 24)
+        .attr("xlink:href", function (d) {
+          var state = d.children || d._children ? "end" : "start";
+          if (state == "end") {
+            //Node is user
+            return "/assets/img/userIcon.png";
+          } else {
+            //Node is oven
+            return "/assets/img/quickNav.png";
+          }
+        })
+
+      nodeEnter.append("text")
+        .attr("x", function (d) {
+          -13;
+        })
+        .attr("dy", ".35em")
+        .attr("text-anchor", function (d) {
+          return "end";
+        })
+        .text(function (d) {
+          return d.name;
+        })
+        .style("fill-opacity", 1e-6);
+
+      nodeEnter.append("svg:image")
+        .attr('x', -10)
+        .attr('y', 10)
+        .attr('width', 15)
+        .attr('height', 24)
+        .attr("xlink:href", "/assets/img/off.png")
+        .on("click", selectChilds);
+
+      // Transition nodes to their new position.
+      var nodeUpdate = node.transition()
+        .duration(duration)
+        .attr("transform", function (d) {
+          return "translate(" + d.y + "," + d.x + ")";
+        });
+
+      nodeUpdate.select("text")
+        .style("fill-opacity", 1);
+
+      // Transition exiting nodes to the parent's new position.
+      var nodeExit = node.exit().transition()
+        .duration(duration)
+        .attr("transform", function (d) {
+          return "translate(" + source.y + "," + source.x + ")";
+        })
+        .remove();
+
+      nodeExit.select("circle")
+        .attr("r", 1e-6);
+
+      nodeExit.select("text")
+        .style("fill-opacity", 1e-6);
+
+      // Update the links…
+      var link = svg.selectAll("path.link")
+        .data(links, function (d) {
+          return d.target.id;
+        });
+
+      // Enter any new links at the parent's previous position.
+      link.enter().insert("path", "g")
+        .attr("class", "link")
+        .attr("d", function (d) {
+          var o = {
+            x: source.x0,
+            y: source.y0
+          };
+          return diagonal({
+            source: o,
+            target: o
+          });
+        });
+
+      // Transition links to their new position.
+      link.transition()
+        .duration(duration)
+        .attr("d", diagonal);
+
+      // Transition exiting nodes to the parent's new position.
+      link.exit().transition()
+        .duration(duration)
+        .attr("d", function (d) {
+          var o = {
+            x: source.x,
+            y: source.y
+          };
+          return diagonal({
+            source: o,
+            target: o
+          });
+        })
+        .remove();
+
+      // Stash the old positions for transition.
+      nodes.forEach(function (d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+    }
+
+    // Toggle children on click.
+    function click(d) {
+      if (d.children) {
+        d._children = d.children;
+        d.children = null;
+      } else {
+        d.children = d._children;
+        d._children = null;
+      }
+      update(d);
+    }
+
+    function selectChilds(d) {
+      let img = document.getElementById("g_" + d.name).lastChild;
+      if(img.getAttribute("href") == "/assets/img/on.png"){
+        img.setAttribute("href", "/assets/img/off.png");
+        setCascade(d);
+      } else {
+        img.setAttribute("href", "/assets/img/on.png");
+      }
+    }
+
+    function setCascade(d){
+      var children = d.children;
+      console.log(children);
+
+      for(let child of children){
+        console.log(child);
+      } 
+    }
+
+  </script>
+
 </body>
+
 </html>
