@@ -190,8 +190,12 @@
           return "img_" + d.name;
         })
         .attr("xlink:href", function (d) {
+          console.log(d._children);
           if (d.children != undefined) {
             return "/assets/img/collapse.png"
+          }
+          if (d._children != undefined) {
+            return "/assets/img/expand.png"
           }
         })
         .on("click", function (d) {
@@ -222,7 +226,11 @@
         .attr('y', 10)
         .attr('width', 15)
         .attr('height', 24)
-        .attr("xlink:href", "/assets/img/off.png")
+        .attr("xlink:href", function (d) {
+          if (document.getElementById("img_" + d.name).getAttribute("href") != "/assets/img/expand.png") {
+            return "/assets/img/off.png"
+          }
+        })
         .on("click", selectChilds);
 
       // Transition nodes to their new position.
@@ -308,22 +316,24 @@
     }
 
     function setCascade(d, state) {
-      if (state == "on") {
-        for (let child of d.children) {
-          img = document.getElementById("g_" + child.name).lastChild;
-          img.setAttribute("href", "/assets/img/on.png");
-          if (child.children != undefined) {
-            //Change recursively
-            setCascade(child, "on");
+      if (d.children != undefined) {
+        if (state == "on") {
+          for (let child of d.children) {
+            img = document.getElementById("g_" + child.name).lastChild;
+            img.setAttribute("href", "/assets/img/on.png");
+            if (child.children != undefined) {
+              //Change recursively
+              setCascade(child, "on");
+            }
           }
-        }
-      } else {
-        for (let child of d.children) {
-          img = document.getElementById("g_" + child.name).lastChild;
-          img.setAttribute("href", "/assets/img/off.png");
-          if (child.children != undefined) {
-            //Change recursively
-            setCascade(child, "off");
+        } else {
+          for (let child of d.children) {
+            img = document.getElementById("g_" + child.name).lastChild;
+            img.setAttribute("href", "/assets/img/off.png");
+            if (child.children != undefined) {
+              //Change recursively
+              setCascade(child, "off");
+            }
           }
         }
       }
