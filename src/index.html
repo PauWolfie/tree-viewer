@@ -45,7 +45,22 @@
           "parent": "Top Level",
           "children": [{
               "name": "Son of A",
-              "parent": "Level 2: A"
+              "parent": "Level 2: A",
+              "children": [{
+                  "name": "Son of son of A",
+                  "parent": "Son of A",
+                  "children": []
+                },
+                {
+                  "name": "Son2 of son of A",
+                  "parent": "Son of A",
+                  "children": [{
+                    "name": "Test large2",
+                    "parent": "Son2 of son of A",
+                    "children": []
+                  }]
+                }
+              ]
             },
             {
               "name": "Daughter of A",
@@ -112,10 +127,10 @@
       });
 
     var svg = d3.select("body").append("svg")
-      .attr("width", width + margin.right + margin.left)
+      .attr("width", "100%")
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      .attr("transform", "translate(" + margin.left + "," + -120 + ")");
 
     root = treeData[0];
     root.x0 = height / 2;
