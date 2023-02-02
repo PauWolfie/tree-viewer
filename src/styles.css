@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+
+.boxTitle{
+    font-weight: bold;
+    background-color: #EEEEEE;
+    padding: 30px;
+    text-align: center;
+}
+
+.quickDetailsBox{
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
